@@ -8,9 +8,9 @@ import java.util.List;
 
 public abstract class EndlessRViewAdapter2 extends EndlessRViewAdapter {
 
-    public <T> void loadSuccess(int refreshPosition, int numRequested, List<T> data) {
+    public <T> void loadSuccess(int refreshPosition, /*int numRequested,*/ List<T> data) {
         int numFetched = data.size();
-        loadSuccess(refreshPosition, numRequested, numFetched);
+        loadSuccess(refreshPosition, /*numRequested, */numFetched);
 
         if (refreshPosition == TOP) {
             refillAndNotify(data);

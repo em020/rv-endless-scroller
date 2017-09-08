@@ -1,4 +1,4 @@
-package yimin.sun.endlessscroller;
+package yimin.sun.endlessscroller.layouthandler;
 
 import android.view.View;
 

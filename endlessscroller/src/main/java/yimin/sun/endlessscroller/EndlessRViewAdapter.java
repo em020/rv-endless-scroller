@@ -1,65 +1,85 @@
 package yimin.sun.endlessscroller;
 
 import android.content.Context;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 /**
  * Created by yzsh-sym on 2017/2/22.
  */
 
-public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements IEndlessRViewAdapter {
+public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> /*implements IEndlessRViewAdapter*/ {
+
+    public static final int FOOTER_INVISIBLE        = 100;
+    public static final int FOOTER_LOADING          = 101;
+    public static final int FOOTER_NO_MORE          = 102;
+    public static final int FOOTER_EMPTY_SET        = 103;
+    public static final int FOOTER_RETRY            = 104;
+    public static final int FOOTER_FAIL             = 105;
+
+    private static final int FOOTER_DEBUG           = -1;
+    private static final int DEF_FIRST_PAGE_NUM = 1;
+    private static final int DEF_PAGE_SIZE = 20;
 
     public static final int TOP = 0;
     public static final int BOTTOM = 1;
 
     private int mFooterState = FOOTER_INVISIBLE;
     private View.OnClickListener retryListener;
-    private FooterConfig footerConfig = new FooterConfig();
+    private EndlessRViewAdapterConfig endlessRViewAdapterConfig;
 
+    private static EndlessRViewAdapterConfig globalConfig = null;
 
-    @Override
-    public int getFooterState() {
+    int getFooterState() {
         return mFooterState;
     }
 
-    @Override
-    public void setFooterState(int state) {
+    private void setFooterState(int state) {
         mFooterState = state;
     }
 
-    @Override
-    public void setFooterRetryListener(View.OnClickListener clickListener) {
+    private void setFooterRetryListener(View.OnClickListener clickListener) {
         retryListener = clickListener;
     }
 
-    @Override
-    public View.OnClickListener getFooterRetryListener() {
+    /*public View.OnClickListener getFooterRetryListener() {
         return retryListener;
+    }*/
+
+    public void setFooterStateToDebug() {
+        mFooterState = FOOTER_DEBUG;
     }
 
     /**
-     * 改变footer样式至加载中，一般来说是显示一个环形progress bar
+     * 底部加载的目标数据的当前长度，用于计算当前page
+     */
+    abstract public int getDataSetSize();
+
+    /**
+     * 改变footer样式至加载中，一般来说是显示一个环形progress bar，注意需要在UI线程调用本方法
      */
     public void loading() {
         setFooterState(FOOTER_LOADING);
-        notifyItemChanged(getItemCount() - 1);
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                notifyItemChanged(getItemCount() - 1);
+            }
+        });
     }
 
     /**
      * 改变footer样式至加载成功，一般来说就是隐藏footer。注意这里仅仅改变footer样式，不会操控数据，刷新列表。
      *
      * @param refreshPosition {@link #BOTTOM} or {@link #TOP} 顶部刷新和底部加载逻辑有区别，所以需要知道这个信息
-     * @param numRequested 请求数据数量，如20个
      * @param numFetched 获取到的数据数量
      */
-    public void loadSuccess(int refreshPosition, int numRequested, int numFetched) {
+    public void loadSuccess(int refreshPosition, /*int numRequested,*/ int numFetched) {
 
         if (numFetched <= 0) {
 
@@ -76,7 +96,7 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
 
         } else {
 
-            if (numFetched < numRequested) {
+            if (numFetched < getPageSize()) {
                 setFooterState(FOOTER_NO_MORE);
             } else {
                 // num fetched >= num requested
@@ -91,35 +111,48 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
 
     /**
      * 改变footer样式至加载失败，一般来说是显示“加载失败，点击重试”。
-     * @param retryImpl
      */
     public void loadFail(final EndlessScroller.Retryable retryImpl) {
-        setFooterRetryListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                retryImpl.retry();
-                setFooterState(FOOTER_LOADING);
-                notifyItemChanged(getItemCount() - 1);
-            }
-        });
-        setFooterState(FOOTER_RETRY);
-        notifyItemChanged(getItemCount() - 1);
+        if (retryImpl != null) {
+            setFooterRetryListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    retryImpl.retry();
+                    setFooterState(FOOTER_LOADING);
+                    notifyItemChanged(getItemCount() - 1);
+                }
+            });
+            setFooterState(FOOTER_RETRY);
+            notifyItemChanged(getItemCount() - 1);
+        } else {
+            setFooterState(FOOTER_FAIL);
+            notifyItemChanged(getItemCount() - 1);
+        }
     }
 
-
-    public void setFooterConfig(@NonNull FooterConfig footerConfig) {
-        this.footerConfig = footerConfig;
+    /**
+     * 设置实例config，将会覆盖global config
+     */
+    public void setConfig(EndlessRViewAdapterConfig endlessRViewAdapterConfig) {
+        this.endlessRViewAdapterConfig = endlessRViewAdapterConfig;
     }
 
-    // ------ 以下方法对尾项即footer进行管理，继承者不需要考虑footer，对继承者是透明的
+    public int getFirstPageNum() {
+        Integer num = getConfig().firstPageNum;
+        return num == null ? DEF_FIRST_PAGE_NUM : num;
+    }
 
+    public int getPageSize() {
+        Integer size = getConfig().pageSize;
+        return size == null ? DEF_PAGE_SIZE : size;
+    }
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (viewType == ITEM_TYPE_FOOTER) {
             Context context = parent.getContext();
             View view = LayoutInflater.from(context).inflate(R.layout.item_footer, parent, false);
-            return new FooterVH(view, footerConfig);
+            return new FooterVH(view);
         } else {
             return onCreateViewHolder2(parent, viewType);
         }
@@ -173,51 +206,52 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
 
     private class FooterVH extends RecyclerView.ViewHolder {
 
-//        static FooterVH create(ViewGroup parent, FooterConfig footerConfig) {
-//            Context context = parent.getContext();
-//            View view = LayoutInflater.from(context).inflate(R.layout.item_footer, parent, false);
-//            return new FooterVH(view, footerConfig);
-//        }
+        FrameLayout frameLoading, frameNoMore, frameRetry, frameFail, frameEmptySet;
 
-        FrameLayout frameLoading, frameNoMore, frameFail, frameEmptySet;
-
-        FooterVH(View itemView, FooterConfig footerConfig) {
+        FooterVH(View itemView) {
             super(itemView);
 
             frameLoading = (FrameLayout) itemView.findViewById(R.id.frame_loading);
             frameNoMore = (FrameLayout) itemView.findViewById(R.id.frame_no_more);
+            frameRetry = (FrameLayout) itemView.findViewById(R.id.frame_retry);
             frameFail = (FrameLayout) itemView.findViewById(R.id.frame_fail);
             frameEmptySet = (FrameLayout) itemView.findViewById(R.id.frame_empty_set);
 
             Context context = itemView.getContext();
             LayoutInflater inflater = LayoutInflater.from(context);
 
-            if (footerConfig.loadingLayout != null) {
-                View view = inflater.inflate(footerConfig.loadingLayout, frameLoading, false);
+            if (getConfig().loadingLayout != null) {
+                View view = inflater.inflate(getConfig().loadingLayout, frameLoading, false);
                 frameLoading.removeAllViews();
                 frameLoading.addView(view);
             }
 
-            if (footerConfig.noMoreLayout != null) {
-                View view = inflater.inflate(footerConfig.noMoreLayout, frameNoMore, false);
+            if (getConfig().noMoreLayout != null) {
+                View view = inflater.inflate(getConfig().noMoreLayout, frameNoMore, false);
                 frameNoMore.removeAllViews();
                 frameNoMore.addView(view);
             }
 
-            if (footerConfig.failLayout != null) {
-                View view = inflater.inflate(footerConfig.failLayout, frameFail, false);
+            if (getConfig().failLayout != null) {
+                View view = inflater.inflate(getConfig().failLayout, frameFail, false);
                 frameFail.removeAllViews();
                 frameFail.addView(view);
             }
 
-            if (footerConfig.emptySetLayout != null) {
-                View view = inflater.inflate(footerConfig.emptySetLayout, frameEmptySet, false);
+            if (getConfig().retryLayout != null) {
+                View view = inflater.inflate(getConfig().retryLayout, frameRetry, false);
+                frameRetry.removeAllViews();
+                frameRetry.addView(view);
+            }
+
+            if (getConfig().emptySetLayout != null) {
+                View view = inflater.inflate(getConfig().emptySetLayout, frameEmptySet, false);
                 frameEmptySet.removeAllViews();
                 frameEmptySet.addView(view);
             }
 
-            if (footerConfig.emptySetLayoutHandler != null) {
-                footerConfig.emptySetLayoutHandler.handleLayout(frameEmptySet);
+            if (getConfig().emptySetLayoutHandler != null) {
+                getConfig().emptySetLayoutHandler.handleLayout(frameEmptySet);
             }
 
         }
@@ -225,24 +259,77 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
         void onBind() {
 
             int mFooterState = getFooterState();
+            if (mFooterState != FOOTER_DEBUG) {
+                if (mFooterState == FOOTER_EMPTY_SET) {
+                    ViewGroup.LayoutParams params = itemView.getLayoutParams();
+                    params.width = -1;
+                    params.height = -1;
+                } else {
+                    ViewGroup.LayoutParams params = itemView.getLayoutParams();
+                    params.width = -1;
+                    params.height = -2;
+                }
 
-            if (mFooterState == FOOTER_EMPTY_SET) {
-                ViewGroup.LayoutParams params = itemView.getLayoutParams();
-                params.width = -1;
-                params.height = -1;
+                frameNoMore.setVisibility(mFooterState == FOOTER_NO_MORE ? View.VISIBLE : View.GONE);
+                frameLoading.setVisibility(mFooterState == FOOTER_LOADING ? View.VISIBLE : View.GONE);
+                frameFail.setVisibility(mFooterState == FOOTER_FAIL ? View.VISIBLE : View.GONE);
+                frameRetry.setVisibility(mFooterState == FOOTER_RETRY ? View.VISIBLE : View.GONE);
+                frameEmptySet.setVisibility(mFooterState == FOOTER_EMPTY_SET ? View.VISIBLE : View.GONE);
             } else {
-                ViewGroup.LayoutParams params = itemView.getLayoutParams();
-                params.width = -1;
-                params.height = -2;
+                frameNoMore.setVisibility(View.VISIBLE);
+                frameLoading.setVisibility(View.VISIBLE);
+                frameFail.setVisibility(View.VISIBLE);
+                frameRetry.setVisibility(View.VISIBLE);
+                frameEmptySet.setVisibility(View.VISIBLE);
             }
-
-
-            frameNoMore.setVisibility(mFooterState == FOOTER_NO_MORE ? View.VISIBLE : View.GONE);
-            frameLoading.setVisibility(mFooterState == FOOTER_LOADING ? View.VISIBLE : View.GONE);
-            frameFail.setVisibility(mFooterState == FOOTER_RETRY ? View.VISIBLE: View.GONE);
-            frameEmptySet.setVisibility(mFooterState == FOOTER_EMPTY_SET ? View.VISIBLE : View.GONE);
 
         }
     }
+
+    private EndlessRViewAdapterConfig getConfig() {
+        if (endlessRViewAdapterConfig != null) {
+            return endlessRViewAdapterConfig;
+        } else if (globalConfig != null) {
+            return globalConfig;
+        } else {
+            return new EndlessRViewAdapterConfig();
+        }
+    }
+
+    /**
+     * 一般来说app内部所有adapter应共享大多数设置，如firstPageNum 等，通过本方法统一设置全局，建议在Application onCreate调用
+     */
+    public static void setGlobalConfig(EndlessRViewAdapterConfig config) {
+        globalConfig = config;
+    }
+
+//    interface IEndlessRViewAdapter {
+//
+//        int FOOTER_INVISIBLE        = 100;
+//        int FOOTER_LOADING          = 101;
+//        int FOOTER_NO_MORE          = 102;
+//        int FOOTER_EMPTY_SET        = 103;
+//        int FOOTER_RETRY            = 104;
+//
+//        /**
+//         * adapter总元素数，用于计算是否触发load more事件，注意，由于此方法与recycler view adapter中的getItemCount方法相同，
+//         * 所以当继承recycler adapter并实现本接口时（绝大多数情况都是这样用），此方法自动实现
+//         */
+//        int getItemCount();
+//
+//        /**
+//         * load more的目标数据元素数，用于计算当前page
+//         */
+//        int getDataSetSize();
+//
+//        int getFooterState();
+//
+//        void setFooterState(int state);
+//
+//        View.OnClickListener getFooterRetryListener();
+//
+//        void setFooterRetryListener(View.OnClickListener clickListener);
+//
+//    }
 
 }

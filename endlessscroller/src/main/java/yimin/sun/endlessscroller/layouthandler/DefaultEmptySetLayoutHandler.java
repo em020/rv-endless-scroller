@@ -1,8 +1,10 @@
-package yimin.sun.endlessscroller;
+package yimin.sun.endlessscroller.layouthandler;
 
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import yimin.sun.endlessscroller.R;
 
 /**
  * Created by yzsh-sym on 2017/9/7.

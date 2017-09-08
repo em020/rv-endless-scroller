@@ -14,10 +14,9 @@ public abstract class EndlessRViewAdapter3<T> extends EndlessRViewAdapter {
 
     public List<T> data;
 
-
-    public void loadSuccess(int refreshPosition, int numRequested, List<T> dataLoaded) {
+    public void loadSuccess(int refreshPosition, /*int numRequested,*/ List<T> dataLoaded) {
         int numFetched = dataLoaded.size();
-        loadSuccess(refreshPosition, numRequested, numFetched);
+        loadSuccess(refreshPosition,/* numRequested,*/ numFetched);
 
         if (refreshPosition == TOP) {
             if (data == null) {
@@ -36,26 +35,5 @@ public abstract class EndlessRViewAdapter3<T> extends EndlessRViewAdapter {
     public int getDataSetSize() {
         return data == null ? 0 : data.size();
     }
-
-
-//    @Override
-//    public RecyclerView.ViewHolder onCreateViewHolder2(ViewGroup parent, int viewType) {
-//        return null;
-//    }
-//
-//    @Override
-//    public void onBindViewHolder2(RecyclerView.ViewHolder holder, int position) {
-//
-//    }
-//
-//    @Override
-//    public int getItemCount2() {
-//        return 0;
-//    }
-//
-//    @Override
-//    public int getItemViewType2(int position) {
-//        return 0;
-//    }
 
 }
