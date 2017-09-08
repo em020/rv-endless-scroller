@@ -1,5 +1,44 @@
 apply plugin: 'com.android.library'
 
+ext {
+    bintrayRepo = 'repo1'
+    bintrayName = 'endless-scroller'
+
+    publishedGroupId = 'com.artdenshop'
+    libraryName = 'EndlessScroller'
+    artifact = 'endlessscroller'
+
+    libraryDescription = 'RecyclerView endless scroll helper'
+
+    siteUrl = 'https://site-url.foo'
+    gitUrl = 'https://git-url.foo'
+
+    libraryVersion = '0.0.1'
+
+    developerId = 'em020'
+    developerName = 'Yimin S'
+    developerEmail = 'eamyn.s@gmail.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+
+    javadoc {
+        options{
+            encoding "UTF-8"
+            charSet 'UTF-8'
+            author true
+            version true
+            links "http://docs.oracle.com/javase/7/docs/api"
+            title "这里写文档标题"
+        }
+    }
+}
+
 android {
     compileSdkVersion 25
     buildToolsVersion "26.0.1"
@@ -30,3 +69,7 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:25.3.1'
     testCompile 'junit:junit:4.12'
 }
+
+// Place it at the end of the file
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
