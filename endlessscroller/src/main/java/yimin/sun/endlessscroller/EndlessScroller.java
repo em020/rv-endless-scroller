@@ -25,7 +25,7 @@ public class EndlessScroller extends RecyclerView.OnScrollListener {
     private static final String TAG = EndlessScroller.class.getSimpleName();
 
     @SuppressWarnings("FieldCanBeLocal")
-    private final boolean showLog = true;
+    public static boolean SHOW_LOG = false;
 
     private RecyclerView.LayoutManager mLayoutManager;
 
@@ -84,7 +84,7 @@ public class EndlessScroller extends RecyclerView.OnScrollListener {
         int footerState = adapter.getFooterState();
         boolean allow = footerState == EndlessRViewAdapter.FOOTER_INVISIBLE || footerState == EndlessRViewAdapter.FOOTER_FAIL;
 
-        if (showLog) {
+        if (SHOW_LOG) {
             Log.d(TAG, String.format(Locale.US, "[EndlessScroller] onScrolled, RecyclerView scroll state = %d, adapter footer state = %d",
                     view.getScrollState(), footerState));
         }
@@ -105,14 +105,14 @@ public class EndlessScroller extends RecyclerView.OnScrollListener {
 
             }
 
-            if (showLog) {
+            if (SHOW_LOG) {
                 Log.d(TAG, String.format(Locale.US, "[EndlessScroller] lastVisible = %d, threshold = %d, total = %d",
                         lastVisibleItemPosition, visibleThreshold, adapter.getItemCount()));
             }
 
             if (lastVisibleItemPosition + 1 + visibleThreshold >= adapter.getItemCount()) {
 
-                if (showLog) {
+                if (SHOW_LOG) {
                     Log.d(TAG, String.format(Locale.US, "[EndlessScroller] Bingo! EndlessScroller is loading more, lastVisible = %d, threshold = %d, total = %d",
                             lastVisibleItemPosition, visibleThreshold, adapter.getItemCount()));
                 }
