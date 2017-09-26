@@ -27,7 +27,7 @@ public abstract class EndlessRViewAdapter3<T> extends EndlessRViewAdapter {
             notifyDataSetChanged();
         } else {
             data.addAll(dataLoaded);
-            notifyItemRangeInserted(getDataSetSize() - dataLoaded.size(), dataLoaded.size());
+            notifyItemRangeInserted(getItemCount() - 1 - dataLoaded.size(), dataLoaded.size());
         }
     }
 
