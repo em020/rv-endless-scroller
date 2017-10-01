@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -281,6 +282,11 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
                 frameFail.setVisibility(View.VISIBLE);
                 frameRetry.setVisibility(View.VISIBLE);
                 frameEmptySet.setVisibility(View.VISIBLE);
+            }
+
+            ViewGroup.LayoutParams params = itemView.getLayoutParams();
+            if (params instanceof StaggeredGridLayoutManager.LayoutParams) {
+                ((StaggeredGridLayoutManager.LayoutParams)params).setFullSpan(true);
             }
 
         }
