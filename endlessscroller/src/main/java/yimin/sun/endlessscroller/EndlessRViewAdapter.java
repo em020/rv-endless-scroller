@@ -2,7 +2,6 @@ package yimin.sun.endlessscroller;
 
 import android.content.Context;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
@@ -33,6 +32,7 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
     private int mFooterState = FOOTER_INVISIBLE;
     private View.OnClickListener retryListener;
     private EndlessRViewAdapterConfig endlessRViewAdapterConfig;
+    private int emptySetItemViewHeight = -1; // default to match_parent
 
     private static EndlessRViewAdapterConfig globalConfig = null;
 
@@ -136,6 +136,13 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
      */
     public void setConfig(EndlessRViewAdapterConfig endlessRViewAdapterConfig) {
         this.endlessRViewAdapterConfig = endlessRViewAdapterConfig;
+    }
+
+    /**
+     * @param emptySetItemViewHeight -1 = match_parent, -2 = wrap_content, or any number in pixels
+     */
+    public void setEmptySetItemViewHeight(int emptySetItemViewHeight) {
+        this.emptySetItemViewHeight = emptySetItemViewHeight;
     }
 
     public int getFirstPageNum() {
@@ -264,7 +271,7 @@ public abstract class EndlessRViewAdapter extends RecyclerView.Adapter<RecyclerV
                 if (mFooterState == FOOTER_EMPTY_SET) {
                     ViewGroup.LayoutParams params = itemView.getLayoutParams();
                     params.width = -1;
-                    params.height = -1;
+                    params.height = emptySetItemViewHeight;
                 } else {
                     ViewGroup.LayoutParams params = itemView.getLayoutParams();
                     params.width = -1;

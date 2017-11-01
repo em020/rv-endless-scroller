@@ -80,8 +80,11 @@ public class MainActivity extends AppCompatActivity implements EndlessScroller.I
 //                        tv.setText("hell yeah");
 //                    }
 //                })
+                .setEmptySetLayout(R.layout.test_empty_set_view)
                 ;
         adapter.setConfig(endlessRViewAdapterConfig);
+
+        adapter.setEmptySetItemViewHeight(-2);
 
         recyclerView.setAdapter(adapter);
 
